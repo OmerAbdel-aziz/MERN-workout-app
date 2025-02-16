@@ -1,68 +1,66 @@
 const Workout = require('../models/workout'); 
-const auth = require('../middleware/auth'); 
+const mongoose = require("mongoose");
 
 
-//get all workouts 
+// ✅ Get all workouts (No user filtering)
 const getAllWorkouts = async (req, res) => {
     try {
-      // Fetch workouts associated with the authenticated user
-      const workouts = await Workout.find({ user: req.user.id }).sort({ createdAt: -1 });
+      const workouts = await Workout.find().sort({ createdAt: -1 }); 
       res.status(200).json(workouts);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
-  }
+}
 
-//get a single workout 
-
+// ✅ Get a single workout (No user check)
 const getSingleWorkout = async (req, res) => {
-    try {
-      const workout = await Workout.findOne({ _id: req.params.id, user: req.user.id });
-  
-      if (!workout) {
-        return res.status(404).json({ error: 'Workout not found' });
-      }
-  
-      res.status(200).json(workout);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+  try {
+    const { id } = req.params;
+
+    // ✅ Check if `id` is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid workout ID format" });
     }
+
+    const workout = await Workout.findById(id);
+
+    if (!workout) {
+      return res.status(404).json({ error: "Workout not found" });
+    }
+
+    res.status(200).json(workout);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
+};
 
-
-//create a workout 
+// Create a workout 
 const createWorkout = async (req, res) => {
     try {
       const { title, load, reps } = req.body;
   
-      // Create a new workout
       const workout = new Workout({
         title,
         load,
-        reps,
-        user: req.user.id, // Associate the workout with the authenticated user
+        reps
       });
   
-      // Save the workout to the database
       await workout.save();
-  
-      // Send the created workout as a response
       res.status(201).json(workout);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
 }  
 
-//update workout 
-const updateWorkout =  async (req, res) => {
+// Update workout 
+const updateWorkout = async (req, res) => {
     try {
       const { title, load, reps } = req.body;
   
-      // Find the workout and update it
-      const workout = await Workout.findOneAndUpdate(
-        { _id: req.params.id, user: req.user.id }, // Ensure the workout belongs to the authenticated user
+      const workout = await Workout.findByIdAndUpdate(
+        req.params.id,
         { title, load, reps },
-        { new: true } // Return the updated workout
+        { new: true }
       );
   
       if (!workout) {
@@ -73,16 +71,12 @@ const updateWorkout =  async (req, res) => {
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
-  }
+}
 
-
-
-//delete a workout 
-
-const deleteWorkout =  async (req, res) => {
+// Delete a workout
+const deleteWorkout = async (req, res) => {
     try {
-      // Find the workout and delete it
-      const workout = await Workout.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+      const workout = await Workout.findByIdAndDelete(req.params.id);
   
       if (!workout) {
         return res.status(404).json({ error: 'Workout not found' });
@@ -92,7 +86,7 @@ const deleteWorkout =  async (req, res) => {
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
-  }
+}
 
 module.exports = {
     createWorkout,

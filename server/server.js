@@ -6,6 +6,12 @@ const connectDB = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const {JWT_SECRET} = require('./config');
+const cors = require("cors");
+
+
+
+//allow the frontend to communicate with the backend
+app.use(cors({ origin: "http://localhost:3001", credentials: true }));
 
 // Middleware
 
